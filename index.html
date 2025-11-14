@@ -12,7 +12,6 @@
     <script src="dist/plugin-html-button-response.js"></script>
     <link rel="stylesheet" href="dist/jspsych.css" />
 
-
     <style>
       body {
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -45,7 +44,7 @@
         border-radius: 8px;
         border: 1px solid #333;
         background: #fff;
-        margin: 0; 
+        margin: 0;
       }
 
       .jspsych-btn:active {
@@ -77,6 +76,27 @@
         z-index: 1000;
       }
 
+      /* ====== 横屏提示遮罩：竖屏时显示，横屏隐藏 ====== */
+      #orientation_warning {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex;                /* 默认显示（竖屏时生效） */
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 9999;
+        padding: 16px;
+        box-sizing: border-box;
+        pointer-events: none;         /* 不阻挡下面的点击/滑动 */
+      }
+
+      @media screen and (orientation: landscape) {
+        #orientation_warning {
+          display: none !important;   /* 横屏时隐藏遮罩 */
+        }
+      }
     </style>
   </head>
 
@@ -102,6 +122,14 @@
       </p>
 
       <button id="start_btn" class="start-btn">开始练习</button>
+    </div>
+
+    <!-- 横屏提示遮罩（竖屏可见，横屏自动隐藏） -->
+    <div id="orientation_warning">
+      <div>
+        <h2>建议横屏使用</h2>
+        <p>为了更好的任务体验，请将手机横屏。</p>
+      </div>
     </div>
   </body>
 

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AX/AO CPT Practice (Mobile)</title>
+
+    <!-- 允许自由缩放，用于各阶段自由调整 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jsPsych core & button plugin -->
+    <script src="dist/jspsych.js"></script>
+    <script src="dist/plugin-html-button-response.js"></script>
+    <link rel="stylesheet" href="../dist/jspsych.css" />
+    
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        background: #fafafa;
+        margin: 0;
+      }
+
+      /* jsPsych 内容居中 */
+      #jspsych-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 16px;
+        text-align: center;
+      }
+
+      .big {
+        font-size: clamp(32px, 10vmin, 72px);
+        letter-spacing: 2px;
+        color: #000;
+      }
+
+      /* jsPsych 按钮（左右反应） */
+      .jspsych-btn {
+        width: min(32vw, 180px);
+        padding: 10px 0;
+        font-size: clamp(14px, 2.4vmin, 18px);
+        border-radius: 8px;
+        border: 1px solid #333;
+        background: #fff;
+        margin: 0;
+      }
+
+      .jspsych-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* 开始按钮 */
+      .start-btn {
+        width: min(70vw, 260px);
+        padding: 14px 0;
+        font-size: clamp(16px, 2.6vmin, 20px);
+        border-radius: 999px;
+        border: 1px solid #333;
+        background: #fff;
+      }
+
+      .start-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* ====== 固定底部按钮组（对称居中） ====== */
+      #jspsych-html-button-response-btngroup {
+        position: fixed;
+        left: 50%;
+        bottom: 6vh;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 32px;
+        z-index: 1000;
+      }
+
+      /* ====== 横屏提示遮罩：竖屏时显示，横屏隐藏 ====== */
+      #orientation_warning {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex;                /* 默认显示（竖屏时生效） */
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 9999;
+        padding: 16px;
+        box-sizing: border-box;
+        pointer-events: none;         /* 不阻挡下面的点击/滑动 */
+      }
+
+      @media screen and (orientation: landscape) {
+        #orientation_warning {
+          display: none !important;   /* 横屏时隐藏遮罩 */
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Instruction：允许自由滑动和缩放 -->
+    <div id="start_screen"
+         style="display:flex; flex-direction:column; align-items:center;
+                justify-content:flex-start; height:100vh; padding:16px;
+                padding-top:8vh; text-align:center; box-sizing:border-box;">
+      <h2>连续性操作测验 - 练习</h2>
+      <p style="max-width:420px;line-height:1.6;">
+        本阶段为 <b>40 次练习</b>，用于熟悉节奏。
+      </p>
+      <p style="max-width:420px;line-height:1.6;text-align:left;">
+        规则：<br/>
+        · A→X → 点击左侧按钮（A-X）<br/>
+        · A→O → 点击右侧按钮（A-O）<br/>
+        · 其他情况不要点。
+      </p>
+
+      <p style="max-width:420px; line-height:1.6; font-size:14px; color:#555;">
+        在此阶段可以自由缩放或滑动屏幕，调整到舒服的位置。
+      </p>
+
+      <button id="start_btn" class="start-btn">开始练习</button>
+    </div>
+
+    <!-- 横屏提示遮罩（竖屏可见，横屏自动隐藏） -->
+    <div id="orientation_warning">
+      <div>
+        <h2>建议横屏使用</h2>
+        <p>为了更好的任务体验，请将手机横屏。</p>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const jsPsych = initJsPsych({
+      on_finish: function () {
+        const trials = jsPsych.data.get().filter({ task: "cpt_practice" }).values();
+
+        const nTarget = trials.filter((t) => t.is_target).length;
+        const nNon = trials.length - nTarget;
+
+        const omissions = trials.filter((t) => t.is_target && !t.responded).length;
+        const commissions = trials.filter((t) => !t.is_target && t.responded).length;
+
+        const hits = trials.filter(
+          (t) => t.is_target && t.correct && Number.isFinite(t.rt)
+        );
+        const rtList = hits.map((t) => t.rt);
+        const meanRT = rtList.length ? Math.round(rtList.reduce((a, b) => a + b) / rtList.length) : "-";
+
+        document.body.innerHTML = `
+        <div id="jspsych-content" style="gap:12px;">
+          <h2>练习结束</h2>
+          <div>目标试次：${nTarget}</div>
+          <div>非目标试次：${nNon}</div>
+          <div>遗漏：${omissions}</div>
+          <div>误报：${commissions}</div>
+          <div>平均反应时（正确目标）：${meanRT} ms</div>
+          <button id="dl" class="jspsych-btn">下载结果</button>
+        </div>`;
+
+        document.getElementById("dl").addEventListener("click", () => {
+          jsPsych.data.get().localSave("csv", "practice_result.csv");
+        });
+      }
+    });
+
+    const plugin_button = window.jsPsychHtmlButtonResponse;
+
+    // 参数
+    const N_TRIALS = 40;
+    const N_AX = 4;
+    const N_AO = 4;
+
+    const LETTER_MS = 300;
+    const ITI_MS = 900;
+    const TOTAL_WINDOW = LETTER_MS + ITI_MS;
+    const FEEDBACK_MS = 300;
+
+    const DIST = "BCDEFGHIJKLXO".split("");
+
+    function randChoice(a) {
+      return a[Math.floor(Math.random() * a.length)];
+    }
+
+    function makePractice() {
+      const blocks = [];
+      for (let i = 0; i < N_AX; i++) blocks.push({ letters: ["A", "X"], type: "AX" });
+      for (let i = 0; i < N_AO; i++) blocks.push({ letters: ["A", "O"], type: "AO" });
+
+      const remain = N_TRIALS - (N_AX + N_AO) * 2;
+      for (let i = 0; i < remain; i++)
+        blocks.push({ letters: [randChoice(DIST)], type: null });
+
+      for (let i = blocks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [blocks[i], blocks[j]] = [blocks[j], blocks[i]];
+      }
+
+      const trials = [];
+      blocks.forEach((b) => {
+        if (b.type === "AX" || b.type === "AO") {
+          trials.push({ letter: "A", is_target: false, target_type: null });
+          trials.push({ letter: b.letters[1], is_target: true, target_type: b.type });
+        } else {
+          trials.push({ letter: b.letters[0], is_target: false, target_type: null });
+        }
+      });
+
+      return trials;
+    }
+
+    const practiceTrials = makePractice();
+
+    const timeline = [];
+
+    practiceTrials.forEach((t) => {
+      // 1) 300ms 字母 + 900ms "+"
+      timeline.push({
+        type: plugin_button,
+        stimulus: `<div class="big">${t.letter}</div>`,
+        choices: ["左：A-X", "右：A-O"],
+        trial_duration: TOTAL_WINDOW,
+        data: {
+          task: "cpt_practice",
+          letter: t.letter,
+          is_target: t.is_target,
+          target_type: t.target_type,
+        },
+        on_load: function () {
+          const stim = document.getElementById("jspsych-html-button-response-stimulus");
+          setTimeout(() => {
+            if (stim) stim.innerHTML = `<div class="big">+</div>`;
+          }, LETTER_MS);
+        },
+        on_finish: function (d) {
+          const r = d.response;
+          d.responded = r !== null;
+
+          let correct = false;
+          if (d.is_target) {
+            correct = (d.target_type === "AX" && r === 0) || (d.target_type === "AO" && r === 1);
+          } else {
+            correct = !d.responded;
+          }
+          d.correct = correct;
+        }
+      });
+
+      // 2) feedback: "+" 变色
+      timeline.push({
+        type: plugin_button,
+        stimulus: function () {
+          const last = jsPsych.data.get().last(1).values()[0];
+
+          let color = "#000";
+          if (last.is_target) color = last.correct ? "green" : "red";
+          else if (last.responded) color = "red";
+
+          return `<div class="big" style="color:${color};">+</div>`;
+        },
+        choices: ["左：A-X", "右：A-O"],
+        response_ends_trial: false,
+        trial_duration: FEEDBACK_MS,
+        data: { task: "feedback" },
+      });
+    });
+
+    // 点击开始
+    document.getElementById("start_btn").addEventListener("click", () => {
+      document.getElementById("start_screen").style.display = "none";
+      jsPsych.run(timeline);
+    });
+  </script>
+</html>
